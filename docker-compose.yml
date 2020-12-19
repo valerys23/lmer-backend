@@ -1,0 +1,46 @@
+version: '3.1'
+
+services:
+  db_la_madeleine:
+    image: mysql:5.7
+    volumes:
+      - ./database:/var/lib/mysql
+    restart: always
+    ports:
+      - "6033:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: la_madeleine
+      MYSQL_USER: la_madeleine
+      MYSQL_PASSWORD: password
+
+  php_myadmin_la_madeleine:
+    depends_on:
+      - db_la_madeleine
+    links: 
+      - db_la_madeleine
+    image: phpmyadmin:latest
+    ports:
+      - "8080:80"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: la_madeleine
+      MYSQL_PASSWORD: password
+      PMA_HOST: db_la_madeleine
+      PMA_PORT: 3306
+
+  wordpress_la_madeleine:
+    depends_on:
+      - db_la_madeleine
+    image: wordpress:latest
+    ports:
+      - "8000:80"
+    restart: always
+    volumes:
+      - ./wp-instance/wp-content/:/var/www/html/wp-content
+    environment:
+      WORDPRESS_DB_NAME: la_madeleine
+      WORDPRESS_DB_HOST: db_la_madeleine:3306
+      WORDPRESS_DB_USER: la_madeleine
+      WORDPRESS_DB_PASSWORD: password
