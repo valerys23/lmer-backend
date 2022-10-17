@@ -2,14 +2,18 @@
 /**
  * View for the body of the WP REST Cache Settings page.
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.1
  *
  * @package    WP_Rest_Cache_Plugin
  * @subpackage WP_Rest_Cache_Plugin/Admin/Partials
  */
 
-$wp_rest_cache_sub = filter_input( INPUT_GET, 'sub', FILTER_SANITIZE_STRING );
+if ( ! isset( $wp_rest_cache_list ) ) {
+	return;
+}
+
+$wp_rest_cache_sub = filter_input( INPUT_GET, 'sub', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
 ?>
 <div id="poststuff">
 	<div id="post-body" class="metabox-holder">

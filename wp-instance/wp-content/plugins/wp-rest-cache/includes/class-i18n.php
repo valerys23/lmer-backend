@@ -5,7 +5,7 @@
  * Loads and defines the internationalization files for this plugin
  * so that it is ready for translation.
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.1
  *
  * @package    WP_Rest_Cache_Plugin
@@ -29,6 +29,8 @@ class I18n {
 
 	/**
 	 * Load the plugin text domain for translation.
+	 *
+	 * @return void
 	 */
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain(

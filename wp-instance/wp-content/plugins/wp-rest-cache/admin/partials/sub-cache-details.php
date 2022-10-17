@@ -2,7 +2,7 @@
 /**
  * View for the Cache details.
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.1
  *
  * @package    WP_Rest_Cache_Plugin
@@ -14,7 +14,7 @@
 	<h3><?php esc_html_e( 'Cache details', 'wp-rest-cache' ); ?></h3>
 	<?php
 	$wp_rest_cache = \WP_Rest_Cache_Plugin\Includes\Caching\Caching::get_instance()->get_cache_data(
-		filter_input( INPUT_GET, 'cache_key', FILTER_SANITIZE_STRING )
+		filter_input( INPUT_GET, 'cache_key', FILTER_SANITIZE_FULL_SPECIAL_CHARS )
 	);
 	?>
 	<div class="poststuff">

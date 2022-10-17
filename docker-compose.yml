@@ -2,7 +2,7 @@ version: '3.1'
 
 services:
   db_la_madeleine:
-    image: mysql:5.7
+    image: mysql:8
     volumes:
       - ./database:/var/lib/mysql
     restart: always
@@ -17,7 +17,7 @@ services:
   php_myadmin_la_madeleine:
     depends_on:
       - db_la_madeleine
-    links: 
+    links:
       - db_la_madeleine
     image: phpmyadmin:latest
     ports:

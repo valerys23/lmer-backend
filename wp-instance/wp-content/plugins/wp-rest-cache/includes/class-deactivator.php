@@ -2,7 +2,7 @@
 /**
  * Fired during plugin deactivation
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.1
  *
  * @package    WP_Rest_Cache_Plugin
@@ -24,6 +24,8 @@ class Deactivator {
 
 	/**
 	 * Deactivate the plugin. Clear cache and delete Must-Use plugin.
+	 *
+	 * @return void
 	 */
 	public static function deactivate() {
 		Caching\Caching::get_instance()->clear_caches( true );

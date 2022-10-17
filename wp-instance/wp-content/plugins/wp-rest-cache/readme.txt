@@ -2,9 +2,9 @@
 Contributors: acato, rockfire, yoeridekker
 Tags: cache, wp-rest-api, api, rest, rest cache, rest api cache
 Requires at least: 4.7
-Tested up to: 5.5
-Requires PHP: 5.5
-Stable tag: 2020.3.2
+Tested up to: 6.0
+Requires PHP: 7.0
+Stable tag: 2022.2.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -157,6 +157,10 @@ Yes you can! Use the hook `wp_rest_cache/settings_capability` like this:
 }
 add_filter('wp_rest_cache/settings_capability', 'wprc_change_settings_capability', 10, 1);`
 
+= Can I use WP CLI to flush caches from the command line? =
+
+Yes you can! Use the `wp wp-rest-cache flush` command to flush caches. Type `wp wp-rest-cache flush --help` to see all options.
+
 == Screenshots ==
 
 1. Settings for the WP REST Cache plugin.
@@ -166,6 +170,74 @@ add_filter('wp_rest_cache/settings_capability', 'wprc_change_settings_capability
 5. Cache details page - Cache data.
 
 == Changelog ==
+
+= 2022.2.2 =
+Release Date: October 10th, 2022
+
+Fix: WP CLI command wasn't working correctly anymore.
+
+= 2022.2.1 =
+Release Date: August 25th, 2022
+
+Hotfix: Settings page wasn't displayed correctly.
+
+= 2022.2.0 =
+Release Date: August 25th, 2022
+
+Feature: Added filter to allow filtering of cache output.
+Improvement: Fix conflict with Wordfence.
+Improvement: Added notice upon any plugin (de/)activation that cache might need to be cleared.
+Improvement: Added phpstan checks and fixed all errors.
+
+= 2022.1.2 =
+Release Date: August 12th, 2022
+
+Bugfix: prevent error on clean install.
+
+= 2022.1.1 =
+Release Date: July 15th, 2022
+
+Bugfix: prevent notice.
+
+= 2022.1.0 =
+Release Date: July 13th, 2022
+
+Bugfix: Fixed regeneration of flushed caches.
+Bugfix: Fix possible fatal error on variable not being an array.
+Bugfix: Fix deprecation notice for PHP 8.
+
+= 2021.4.1 =
+Release Date: September 15th, 2021
+
+Bugfix: Fix notice for missing variable.
+
+= 2021.4.0 =
+Release Date: September 15th, 2021
+
+Feature: Added filter for disabling CORS headers.
+Feature: Added filter to disallow caching of (sub)endpoints.
+Bugfix: Filesystem methods weren't always loaded correctly when the plugin was loaded through a mu-plugin.
+
+= 2021.3.0 =
+Release Date: April 15th, 2021
+
+Feature: Added support for when the plugin itself is installed as a mu-plugin.
+
+= 2021.2.1 =
+Release Date: February 27th, 2021
+
+Bugfix: Error in delete_object_type_caches function.
+
+= 2021.2.0 =
+Release Date: February 24th, 2021
+
+Feature: Added WP CLI command to flush caches from the command line.
+Bugfix: Force saved cache to be valid JSON (to prevent errors with invalid JSON responses).
+
+= 2021.1.0 =
+Release Date: January 28th, 2021
+
+Feature: Added a filter to allow caching of requests with a nonce.
 
 = 2020.3.2 =
 Release Date: November 10th, 2020

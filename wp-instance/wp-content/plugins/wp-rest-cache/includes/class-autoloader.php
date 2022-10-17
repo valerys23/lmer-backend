@@ -2,7 +2,7 @@
 /**
  * Autoload all plugin classes
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.5
  *
  * @package    WP_Rest_Cache_Plugin
@@ -27,6 +27,8 @@ class Autoloader {
 	 * Autoload classes related to this plugin.
 	 *
 	 * @param string $class_name The requested class.
+	 *
+	 * @return void
 	 */
 	public static function autoload( $class_name ) {
 		$file_path = explode( '\\', $class_name );

@@ -2,7 +2,7 @@
 /**
  * Fired during plugin activation
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.1
  *
  * @package    WP_Rest_Cache_Plugin
@@ -24,10 +24,15 @@ class Activator {
 
 	/**
 	 * Activate the plugin. Add default options and copy Must-Use plugin to correct directory.
+	 *
+	 * @return void
 	 */
 	public static function activate() {
 		if ( ! get_option( 'wp_rest_cache_allowed_endpoints' ) ) {
 			add_option( 'wp_rest_cache_allowed_endpoints', [], '', false );
+		}
+		if ( ! get_option( 'wp_rest_cache_disallowed_endpoints' ) ) {
+			add_option( 'wp_rest_cache_disallowed_endpoints', [], '', false );
 		}
 		if ( ! get_option( 'wp_rest_cache_rest_prefix' ) ) {
 			add_option( 'wp_rest_cache_rest_prefix', rest_get_url_prefix(), '', false );
@@ -49,9 +54,14 @@ class Activator {
 	}
 
 	/**
-	 * Create a Must Use plugin to handle caching asap. Before loading of other plugins and/or theme.
+	 * Create a Must-Use plugin to handle caching asap. Before loading of other plugins and/or theme.
+	 *
+	 * @return void
 	 */
 	public static function create_mu_plugin() {
+		// Make sure filesystem methods are loaded (not always the case when loaded through mu-plugin).
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+
 		$access_type = get_filesystem_method();
 		if ( 'direct' !== $access_type ) {
 			return;

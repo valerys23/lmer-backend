@@ -2,7 +2,7 @@
 /**
  * API for endpoint caching.
  *
- * @link: http://www.acato.nl
+ * @link: https://www.acato.nl
  * @since 2018.1
  *
  * @package    WP_Rest_Cache_Plugin
@@ -43,7 +43,7 @@ class Endpoint_Api {
 	 * The response headers that need to be send with the cached call.
 	 *
 	 * @access private
-	 * @var    array $response_headers The response headers.
+	 * @var    array<string,string> $response_headers The response headers.
 	 */
 	private $response_headers = array(
 		'Content-Type'                  => 'application/json; charset=UTF-8',
@@ -58,7 +58,7 @@ class Endpoint_Api {
 	 * The request headers that need to be used to distinguish separate caches.
 	 *
 	 * @access private
-	 * @var    array $request_headers The request headers.
+	 * @var    array<string,string> $request_headers The request headers.
 	 */
 	private $request_headers = array();
 
@@ -74,7 +74,7 @@ class Endpoint_Api {
 	 * The default WordPress REST endpoints, that can be cached.
 	 *
 	 * @access private
-	 * @var    array $wordpress_endpoints An array of default WordPress endpoints.
+	 * @var    array<string,array<int,string>> $wordpress_endpoints An array of default WordPress endpoints.
 	 */
 	private $wordpress_endpoints = array(
 		'wp/v2' => array(
@@ -123,6 +123,8 @@ class Endpoint_Api {
 
 	/**
 	 * Create an array of cacheable request headers based upon settings and hooks.
+	 *
+	 * @return void
 	 */
 	private function set_cacheable_request_headers() {
 		$this->request = new \WP_REST_Request();
@@ -131,9 +133,9 @@ class Endpoint_Api {
 
 		$cacheable_headers = \WP_Rest_Cache_Plugin\Includes\Caching\Caching::get_instance()->get_global_cacheable_request_headers();
 		$cacheable_headers = explode( ',', $cacheable_headers );
-		if ( count( $cacheable_headers ) ) {
+		if ( is_array( $cacheable_headers ) ) {
 			foreach ( $cacheable_headers as $header ) {
-				if ( strlen( $header ) ) {
+				if ( '' !== $header ) {
 					$this->request_headers[ $header ] = $this->request->get_header( $header );
 				}
 			}
@@ -148,7 +150,7 @@ class Endpoint_Api {
 				}
 
 				$cacheable_headers = explode( ',', $cacheable_headers );
-				if ( count( $cacheable_headers ) ) {
+				if ( is_array( $cacheable_headers ) ) {
 					foreach ( $cacheable_headers as $header ) {
 						if ( strlen( $header ) ) {
 							$this->request_headers[ $header ] = $this->request->get_header( $header );
@@ -163,12 +165,14 @@ class Endpoint_Api {
 
 	/**
 	 * Build the cache key. A hashed combination of request uri and cacheable request headers.
+	 *
+	 * @return void
 	 */
 	private function build_cache_key() {
 		$this->build_request_uri();
 		$this->set_cacheable_request_headers();
 		// No filter_input, see https://stackoverflow.com/questions/25232975/php-filter-inputinput-server-request-method-returns-null/36205923.
-		$request_method = filter_var( $_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_STRING );
+		$request_method = filter_var( $_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
 		// For backwards compatibility empty string for request method = GET.
 		if ( 'GET' === $request_method ) {
 			$request_method = '';
@@ -184,6 +188,8 @@ class Endpoint_Api {
 	 * @param \WP_HTTP_Response $result  Result to send to the client.
 	 * @param \WP_REST_Request  $request Request used to generate the response.
 	 * @param \WP_REST_Server   $server  Server instance.
+	 *
+	 * @return void
 	 */
 	public function save_cache_headers( $served, \WP_HTTP_Response $result, \WP_REST_Request $request, \WP_REST_Server $server ) {
 		$headers = $result->get_headers();
@@ -199,7 +205,7 @@ class Endpoint_Api {
 		 * @param string $request_uri The requested URI.
 		 */
 		$headers = apply_filters( 'wp_rest_cache/cache_headers', $headers, $this->request_uri );
-		if ( isset( $headers ) && ! empty( $headers ) ) {
+		if ( ! empty( $headers ) && is_array( $headers ) ) {
 			foreach ( $headers as $key => $value ) {
 				/**
 				 * Filter the cache header.
@@ -221,15 +227,26 @@ class Endpoint_Api {
 	/**
 	 * Cache the response data.
 	 *
-	 * @param array            $result  Response data to send to the client.
-	 * @param \WP_REST_Server  $server  Server instance.
-	 * @param \WP_REST_Request $request Request used to generate the response.
+	 * @param array<string,mixed> $result  Response data to send to the client.
+	 * @param \WP_REST_Server     $server  Server instance.
+	 * @param \WP_REST_Request    $request Request used to generate the response.
 	 *
-	 * @return array Response data to send to the client.
+	 * @return array<string,mixed> Response data to send to the client.
 	 */
 	public function save_cache( $result, \WP_REST_Server $server, \WP_REST_Request $request ) {
 		// Only Avoid cache if not 200.
-		if ( ! empty( $result ) && is_array( $result ) && isset( $result['data']['status'] ) && 200 !== (int) $result['data']['status'] ) {
+		if ( ! empty( $result )
+			&& is_array( $result )
+			&& (
+				(
+					isset( $result['data'] )
+					&& is_array( $result['data'] )
+					&& isset( $result['data']['status'] )
+					&& 200 !== (int) $result['data']['status']
+				)
+				|| 200 !== http_response_code()
+			)
+		) {
 			return $result;
 		}
 
@@ -239,7 +256,10 @@ class Endpoint_Api {
 		}
 
 		// No filter_input, see https://stackoverflow.com/questions/25232975/php-filter-inputinput-server-request-method-returns-null/36205923.
-		$request_method = filter_var( $_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_STRING );
+		$request_method = filter_var( $_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+
+		// Force result to be valid JSON.
+		$result = json_decode( wp_json_encode( $result ) );
 
 		$data = array(
 			'data'    => $result,
@@ -272,14 +292,26 @@ class Endpoint_Api {
 		}
 
 		$wp_nonce = $this->request->get_header( 'x_wp_nonce' );
-		if ( ! is_null( $wp_nonce ) ) {
+
+		/**
+		 * Allow for programmatically enable nonce caching.
+		 *
+		 * Allows to programmatically enable caching of requests with a nonce.
+		 *
+		 * @since 2021.1.0
+		 *
+		 * @param bool $skip_nonce_caching False if cache should not be skipped when nonce is present.
+		 * @param \WP_REST_Request $request The current REST Request.
+		 * @param string $request_uri The REST URI that is being requested.
+		 */
+		if ( apply_filters( 'wp_rest_cache/skip_nonce_caching', true, $this->request, $this->request_uri ) && ! is_null( $wp_nonce ) ) {
 			return true;
 		}
 
 		// Default only cache GET-requests.
 		$allowed_request_methods = get_option( 'wp_rest_cache_allowed_request_methods', [ 'GET' ] );
 		// No filter_input, see https://stackoverflow.com/questions/25232975/php-filter-inputinput-server-request-method-returns-null/36205923.
-		if ( ! in_array( filter_var( $_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_STRING ), $allowed_request_methods, true ) ) {
+		if ( ! in_array( filter_var( $_SERVER['REQUEST_METHOD'], FILTER_SANITIZE_FULL_SPECIAL_CHARS ), $allowed_request_methods, true ) ) {
 			return true;
 		}
 
@@ -319,12 +351,28 @@ class Endpoint_Api {
 			return true;
 		}
 
+		$disallowed_endpoints = get_option( 'wp_rest_cache_disallowed_endpoints', [] );
+
+		foreach ( $disallowed_endpoints as $namespace => $endpoints ) {
+			foreach ( $endpoints as $endpoint ) {
+				$endpoint_uri = $rest_prefix . $namespace . '/' . $endpoint;
+				if ( $use_parameter ) {
+					$endpoint_uri = $rest_prefix . rawurlencode( '/' . $namespace . '/' . $endpoint );
+				}
+				if ( strpos( $this->request_uri, $endpoint_uri ) !== false ) {
+					return true;
+				}
+			}
+		}
+
 		// We dont skip.
 		return false;
 	}
 
 	/**
 	 * Check if the current call is a REST API call, if so check if it has already been cached, otherwise cache it.
+	 *
+	 * @return void
 	 */
 	public function get_api_cache() {
 
@@ -337,14 +385,36 @@ class Endpoint_Api {
 		$cache = \WP_Rest_Cache_Plugin\Includes\Caching\Caching::get_instance()->get_cache( $this->cache_key );
 
 		if ( false !== $cache ) {
+			/**
+			 * Filter cache data.
+			 *
+			 * Allow filtering of the cached data.
+			 *
+			 * @since 2022.2.0
+			 *
+			 * @param mixed $data The cached JSON data object.
+			 */
+			$data = apply_filters( 'wp_rest_cache/filter_cache_output', $cache['data'] );
+
 			// We want the data to be json.
-			$data       = wp_json_encode( $cache['data'] );
+			$data       = wp_json_encode( $data );
 			$last_error = json_last_error();
 
 			if ( JSON_ERROR_NONE === $last_error ) {
 
-				$this->rest_send_cors_headers( '' );
-				
+				/**
+				 * Disable CORS headers.
+				 *
+				 * Allows to disable the sending of CORS headers.
+				 *
+				 * @since 2021.4.0
+				 *
+				 * @param boolean $disable_cors_headers True if CORS headers should not be send.
+				 */
+				if ( false === apply_filters( 'wp_rest_cache/disable_cors_headers', false ) ) {
+					$this->rest_send_cors_headers( '' );
+				}
+
 				foreach ( $cache['headers'] as $key => $value ) {
 					$header = sprintf( '%s: %s', $key, $value );
 					header( $header );
@@ -390,10 +460,13 @@ class Endpoint_Api {
 	/**
 	 * Re-save the options if they have changed. We need them as options since we are going to use them early in the
 	 * WordPress process even before several hooks are fired.
+	 *
+	 * @return void
 	 */
 	public function save_options() {
-		$original_allowed_endpoints = get_option( 'wp_rest_cache_allowed_endpoints', [] );
-		$item_allowed_endpoints     = get_option( 'wp_rest_cache_item_allowed_endpoints', [] );
+		$original_allowed_endpoints    = get_option( 'wp_rest_cache_allowed_endpoints', [] );
+		$item_allowed_endpoints        = get_option( 'wp_rest_cache_item_allowed_endpoints', [] );
+		$original_disallowed_endpoints = get_option( 'wp_rest_cache_disallowed_endpoints', [] );
 
 		/**
 		 * Override cache-enabled endpoints.
@@ -407,6 +480,20 @@ class Endpoint_Api {
 		$allowed_endpoints = apply_filters( 'wp_rest_cache/allowed_endpoints', $item_allowed_endpoints );
 		if ( $original_allowed_endpoints !== $allowed_endpoints ) {
 			update_option( 'wp_rest_cache_allowed_endpoints', $allowed_endpoints, false );
+		}
+
+		/**
+		 * Override cache-disabled endpoints.
+		 *
+		 * Allows to override the endpoints that will not be cached by the WP REST Cache plugin.
+		 *
+		 * @since 2021.4.0
+		 *
+		 * @param array $original_disallowed_endpoints An array of endpoints that are not allowed to be cached.
+		 */
+		$disallowed_endpoints = apply_filters( 'wp_rest_cache/disallowed_endpoints', $original_disallowed_endpoints );
+		if ( $original_disallowed_endpoints !== $disallowed_endpoints ) {
+			update_option( 'wp_rest_cache_disallowed_endpoints', $disallowed_endpoints, false );
 		}
 
 		$original_rest_prefix = get_option( 'wp_rest_cache_rest_prefix' );
@@ -471,7 +558,7 @@ class Endpoint_Api {
 		 *
 		 * @since 2020.2.0
 		 *
-		 * @param boolean $original_uncached_parameters An array of query parameters that should be omitted from the cacheable query string.
+		 * @param boolean $original_cache_hit_recording Set to false to disable cache hit recording.
 		 */
 		$cache_hit_recording = apply_filters( 'wp_rest_cache/cache_hit_recording', $original_cache_hit_recording );
 		if ( (int) $original_cache_hit_recording !== (int) $cache_hit_recording ) {
@@ -482,9 +569,9 @@ class Endpoint_Api {
 	/**
 	 * Add the default WordPress endpoints to the allowed endpoints for caching.
 	 *
-	 * @param array $allowed_endpoints The endpoints that are allowed to be cache.
+	 * @param array<string,array<int,string>> $allowed_endpoints The endpoints that are allowed to be cached.
 	 *
-	 * @return mixed An array of endpoints that are allowed to be cache.
+	 * @return mixed An array of endpoints that are allowed to be cached.
 	 */
 	public function add_wordpress_endpoints( array $allowed_endpoints ) {
 		foreach ( $this->wordpress_endpoints as $rest_base => $endpoints ) {
