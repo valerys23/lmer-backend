@@ -82,7 +82,7 @@
     /**
      * Customise the login screen
      */
-    function madeleine_login_logo() { ?>
+    /*function madeleine_login_logo() { ?>
         <style type="text/css">
             #login h1 a, .login h1 a {
             background-image: url(<?php echo get_stylesheet_directory_uri(); ?>/assets/logo.png);
@@ -94,7 +94,7 @@
             }
         </style>
     <?php }
-    add_action( 'login_enqueue_scripts', 'madeleine_login_logo' );
+    add_action( 'login_enqueue_scripts', 'madeleine_login_logo' );*/
 
     function madeleine_custom_login_headurl() {
         return home_url();
